@@ -1,74 +1,118 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { FlatList, ListRenderItem, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AlmaUPost, AlmaUPostsResponse } from '@/utils/types';
+import { Link } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const API_ENDPOINT = "https://almau.edu.kz/wp-json/wp/v2/posts/";
 
-export default function HomeScreen() {
+export const removeHTML = (html: string) => html.replace(/<[^>]*>/gm, '').replace(/\[&hellip;\]/g, '...');
+
+export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [posts, setPosts] = useState<AlmaUPost[]>([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(API_ENDPOINT);
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`)
+        }
+
+        const data: AlmaUPostsResponse = await response.json();
+
+        setPosts(data);
+      } catch (e) {
+        console.error(e);
+        setError('Не удалось загрузить новости')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPosts()
+  }, []);
+
+  const renderItem: ListRenderItem<AlmaUPost> = ({ item }) => (
+    <Link href={`/${item.id}`} style={styles.item}>
+      <View>
+        <Text style={styles.itemTitle}>
+          {item.title?.rendered ?? "Нет заголовка"}  
+        </Text>
+        <Text style={styles.itemExcerpt}>
+          {item.excerpt?.rendered
+            ? removeHTML(item.excerpt.rendered).substring(0, 150)
+            : "Нет описания"}
+        </Text>
+      </View>
+    </Link>
+  )
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
+    <View style={styles.container}>
+      <Text style={styles.title}>Новости AlmaU</Text>
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.list}
+      />
+    </View>
+  )
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    marginTop: StatusBar.currentHeight || 0,
+    padding: 10,
+    backgroundColor: "#f0f0f0",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+    color: "#333",
   },
-});
+  list: {
+    paddingBottom: 20,
+  },
+  item: {
+    backgroundColor: "#fff",
+    padding: 15,
+    marginVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#0056b3", 
+  },
+  itemExcerpt: {
+    marginTop: 5,
+    fontSize: 14, 
+    color: "#555",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 18,
+  },
+})
