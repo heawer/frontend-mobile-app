@@ -8,21 +8,21 @@ import {
   StatusBar,
   Pressable,
 } from "react-native"
-import { useLocalSearchParams, Stack, useNavigation } from "expo-router" 
-import { useEffect, useState, useLayoutEffect } from "react" 
+import { useLocalSearchParams, Stack, useNavigation } from "expo-router"
+import { useEffect, useState, useLayoutEffect } from "react"
 import { AlmaUPost, AlmaUPostsResponse } from "@/utils/types"
-import { removeHTML } from "./(tabs)" 
-import { useFavorites } from "@/context/FavoritesContext" 
+import { removeHTML } from "./(tabs)"
+import { useFavorites } from "@/context/FavoritesContext"
 import Ionicons from "@expo/vector-icons/Ionicons"
 
 export default function ArticleDetails() {
   const { articleId } = useLocalSearchParams<{ articleId: string }>()
-  const navigation = useNavigation() 
-  const { addFavorite, removeFavorite, isFavorite } = useFavorites() 
+  const navigation = useNavigation()
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites()
   const [article, setArticle] = useState<AlmaUPost | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const id = articleId ? parseInt(articleId, 10) : null 
+  const id = articleId ? parseInt(articleId, 10) : null
 
   const API_ENDPOINT = `https://almau.edu.kz/wp-json/wp/v2/posts/${articleId}`
 
@@ -51,48 +51,50 @@ export default function ArticleDetails() {
     }
 
     fetchArticleDetails()
-  }, [articleId, id]) 
+  }, [articleId, id])
 
   useLayoutEffect(() => {
     if (article) {
       const isCurrentArticleFavorite = isFavorite(article.id)
 
       navigation.setOptions({
-        title: article.title.rendered || "Статья", 
-        headerShown: true, 
+        title: "Статья",
+        headerShown: true,
         headerRight: () => (
-          <Pressable
-            onPress={() => {
-              if (isCurrentArticleFavorite) {
-                removeFavorite(article.id)
-              } else {
-                addFavorite({ id: article.id, title: article.title.rendered })
-              }
-            }}
-          >
-            <Ionicons
-              name={isCurrentArticleFavorite ? "heart" : "heart-outline"} 
-              size={24}
-              color={isCurrentArticleFavorite ? "red" : "#555"} 
-              style={{ marginRight: 15 }}
-            />
-                     
-          </Pressable>
+          <View> {/* <View style={styles.iconCenter}> */}
+            <Pressable
+              onPress={() => {
+                if (isCurrentArticleFavorite) {
+                  removeFavorite(article.id)
+                } else {
+                  addFavorite({ id: article.id, title: article.title.rendered })
+                }
+              }}
+            >
+              <Ionicons
+                name={isCurrentArticleFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={isCurrentArticleFavorite ? "red" : "#555"}
+                style={{ marginRight: 15 }}
+              />
+                       
+            </Pressable>
+          </View>
         ),
       })
     } else {
       navigation.setOptions({
         title: "Загрузка...",
         headerShown: true,
-        headerRight: undefined, 
+        headerRight: undefined,
       })
     }
-  }, [navigation, article, isFavorite, addFavorite, removeFavorite]) 
+  }, [navigation, article, isFavorite, addFavorite, removeFavorite])
 
   if (loading) {
     return (
       <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#0000ff" />       
+        <ActivityIndicator size="large" color="#0000ff" />       
         <Text>Загрузка статьи...</Text>     
       </View>
     )
@@ -109,7 +111,7 @@ export default function ArticleDetails() {
   if (!article) {
     return (
       <View style={styles.centered}>
-                <Text>Статья не найдена.</Text>     
+        <Text>Статья не найдена.</Text>     
       </View>
     )
   }
@@ -117,9 +119,8 @@ export default function ArticleDetails() {
   return (
     <ScrollView style={styles.container}>
            
-      
       <View style={styles.separator}>
-              
+             
         <Text style={styles.body}>
                    
           {article.content.rendered
@@ -151,6 +152,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
   },
+  // iconCenter: {
+  //   marginTop: 15,
+  // },
   separator: {
     marginVertical: 10,
   },
